@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.6.8;
 
 import './UpgradeabilityStorage.sol';
 
@@ -13,7 +13,7 @@ contract Upgradeable is UpgradeabilityStorage {
   * THIS FUNCTION SHOULD BE OVERRIDDEN CALLING SUPER
   * @param sender representing the address deploying the initial behavior of the contract
   */
-  function initialize(address sender) public payable {
+  function initialize(address sender) public virtual payable {
     require(msg.sender == address(registry));
   }
 }

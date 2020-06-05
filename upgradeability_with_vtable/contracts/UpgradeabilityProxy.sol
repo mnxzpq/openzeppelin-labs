@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.6.8;
 
 import './Proxy.sol';
 import './IRegistry.sol';
@@ -13,7 +13,7 @@ contract UpgradeabilityProxy is Proxy, UpgradeabilityStorage {
   /**
    * @dev Constructor function
    */
-  function UpgradeabilityProxy(string _version) public {
+  constructor(string memory _version) public {
     registry = IRegistry(msg.sender);
     version_ = _version;
     loadVersion();
@@ -23,7 +23,7 @@ contract UpgradeabilityProxy is Proxy, UpgradeabilityStorage {
    * @dev Upgrades the implementation of a given function to the requested version
    * @param targetVersion representing the version name of the new implementation to be set
    */
-  function upgradeTo(string targetVersion) public {
+  function upgradeTo(string memory targetVersion) public {
     clearVersion();
     version_ = targetVersion;
     loadVersion();
@@ -39,7 +39,7 @@ contract UpgradeabilityProxy is Proxy, UpgradeabilityStorage {
 
     for (i = 0; i < registry.getFunctionCount(version_); i++) {
       (func, impl) = registry.getFunctionByIndex(version_, i);
-      implementations_[func] = 0;
+      implementations_[func] = address(0);
     }
 
     fallback_ = address(0);
@@ -59,5 +59,11 @@ contract UpgradeabilityProxy is Proxy, UpgradeabilityStorage {
     }
     
     fallback_ = registry.getFallback(version_);
+  }
+  
+  
+  function implementation(bytes4 func) public view override(Proxy) returns (address) {
+    address impl = implementations_[func];
+    return impl == address(0) ? fallback_ : impl;
   }
 }

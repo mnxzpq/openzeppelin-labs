@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.6.8;
 
 import './IRegistry.sol';
 import './Upgradeable.sol';
@@ -21,7 +21,7 @@ contract Registry is IRegistry {
   /**
    * @dev Returns a function name and implementation for a given version, given its index
    */
-  function getFunctionByIndex(string version, uint256 index) public view returns (bytes4, address) {
+  function getFunctionByIndex(string memory version, uint256 index) public view override returns (bytes4, address) {
     bytes4 func = funcs[version][index];
     return (funcs[version][index], versions[version][func]);
   }
@@ -29,25 +29,30 @@ contract Registry is IRegistry {
   /**
    * @dev Returns the number of functions (excluding the fallback function) registered for a specific version
    */
-  function getFunctionCount(string version) public view returns (uint256) {
+  function getFunctionCount(string memory version) public view override returns (uint256) {
     return funcs[version].length;
   }
 
   /**
    * @dev Returns the the fallback function for a specific version, if registered
    */
-  function getFallback(string version) public view returns (address) {
+  function getFallback(string memory version) public view override returns (address) {
     return fallbacks[version];
   }
 
   /**
    * @dev Registers a fallback function implementation for a version
    */
-  function addFallback(string version, address implementation) public {
+  function addFallback(string memory version, address implementation) public {
     require(fallbacks[version] == address(0));
     fallbacks[version] = implementation;
-    FallbackAdded(version, implementation);
+    emit FallbackAdded(version, implementation);
   }
+  
+  function funcToBytes4(string memory func) public view  returns (bytes4){
+      //bytes memory s = abi.encodePacked(func);
+      return bytes4(keccak256(bytes(func)));
+  } 
 
   /**
   * @dev Registers a new version of a function with its implementation address
@@ -55,8 +60,8 @@ contract Registry is IRegistry {
   * @param func representing the name of the function to be registered
   * @param implementation representing the address of the new function implementation to be registered
   */
-  function addVersionFromName(string version, string func, address implementation) public {
-    return addVersion(version, bytes4(keccak256(func)), implementation);
+  function addVersionFromName(string memory version, string memory func, address implementation) public override {
+    return addVersion(version, bytes4(keccak256(bytes(func))), implementation);
   }
 
   /**
@@ -65,7 +70,7 @@ contract Registry is IRegistry {
   * @param func representing the signature of the function to be registered
   * @param implementation representing the address of the new function implementation to be registered
   */
-  function addVersion(string version, bytes4 func, address implementation) public {
+  function addVersion(string memory version, bytes4 func, address implementation) public override{
     require(versions[version][func] == address(0));
     versions[version][func] = implementation;
     funcs[version].push(func);
@@ -78,7 +83,7 @@ contract Registry is IRegistry {
   * @param func representing the signature of the function to be queried
   * @return address of the function implementation registered for the given version
   */
-  function getFunction(string version, bytes4 func) public view returns (address) {
+  function getFunction(string memory version, bytes4 func) public view override returns (address) {
     return versions[version][func];
   }
 
@@ -86,10 +91,11 @@ contract Registry is IRegistry {
   * @dev Creates an upgradeable proxy
   * @return address of the new proxy created
   */
-  function createProxy(string version) public payable returns (UpgradeabilityProxy) {
+  function createProxy(string memory version) public payable returns (UpgradeabilityProxy) {
     UpgradeabilityProxy proxy = new UpgradeabilityProxy(version);
-    Upgradeable(proxy).initialize.value(msg.value)(msg.sender);
-    ProxyCreated(proxy);
+    //Upgradeable(address(proxy)).initialize.value(msg.value)(msg.sender);
+    Upgradeable(address(proxy)).initialize{value: msg.value}(msg.sender);
+    ProxyCreated(address(proxy));
     return proxy;
   }
 }

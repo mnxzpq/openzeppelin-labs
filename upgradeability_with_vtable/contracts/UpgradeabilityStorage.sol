@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.6.8;
 
 import './IRegistry.sol';
 
@@ -24,8 +24,5 @@ contract UpgradeabilityStorage {
   * @param func representing the signature of the function to query the implementation of
   * @return address of the current implementation of the given function
   */
-  function implementation(bytes4 func) public view returns (address) {
-    address impl = implementations_[func];
-    return impl == address(0) ? fallback_ : impl;
-  }
+  //function implementation(bytes4 func) public virtual view returns (address);
 }

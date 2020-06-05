@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.6.8;
 
 import '../Upgradeable.sol';
 
@@ -14,17 +14,17 @@ contract TokenV0_Storage is Upgradeable, TokenV0_Events {
   mapping (address => uint) balances;
 }
 
-contract TokenV0_Interface is TokenV0_Events {
-  function initialize(address sender) public payable;
-  function balanceOf(address addr) public view returns (uint);
-  function transfer(address to, uint256 value) public;
-  function mint(address to, uint256 value) public;
+abstract contract TokenV0_Interface is TokenV0_Events {
+  function initialize(address sender) public virtual payable;
+  function balanceOf(address addr) public view virtual returns (uint);
+  function transfer(address to, uint256 value) public virtual;
+  function mint(address to, uint256 value) public virtual;
 }
 
 contract TokenV0_Init is TokenV0_Storage {
-  function initialize(address sender) public payable {
+  function initialize(address sender) public override payable {
     super.initialize(sender);
-    (TokenV0_Interface(this)).mint(sender, 10000);
+    (TokenV0_Interface(address(this))).mint(sender, 10000);
   }
 }
 
@@ -55,9 +55,9 @@ contract TokenV0_Mint is TokenV0_Storage {
 // We are adding a Transfer event emission to the transfer and mint functions, plus a burn function
 // We also rename transfer to safeTransfer (event though it is not)
 
-contract TokenV1_Interface is TokenV0_Interface {
-  function burn(address from, uint256 value) public;
-  function safeTransfer(address to, uint256 value) public;
+abstract contract TokenV1_Interface is TokenV0_Interface {
+  function burn(address from, uint256 value) public virtual;
+  function safeTransfer(address to, uint256 value) public virtual;
 }
 
 contract TokenV1_Transfer is TokenV0_Storage {
@@ -65,14 +65,14 @@ contract TokenV1_Transfer is TokenV0_Storage {
     require(balances[msg.sender] >= value);
     balances[msg.sender] -= value;
     balances[to] += value;
-    Transfer(msg.sender, to, value);
+    emit Transfer(msg.sender, to, value);
   }
 }
 
 contract TokenV1_Mint is TokenV0_Storage {
   function mint(address to, uint256 value) public {
     balances[to] += value;
-    Transfer(0x0, to, value);
+    emit Transfer(address(0), to, value);
   }
 }
 
@@ -80,7 +80,7 @@ contract TokenV1_Burn is TokenV0_Storage {
   function burn(address from, uint256 value) public {
     require(balances[from] >= value);
     balances[from] -= value;
-    Transfer(from, 0x0, value);
+    emit Transfer(from, address(0), value);
   }
 }
 
@@ -91,7 +91,7 @@ contract TokenV1_Burn is TokenV0_Storage {
 // We are adding a fallback function
 
 contract TokenV2_Fallback is TokenV0_Storage {
-  function() payable public {
-    (TokenV1_Interface(this)).mint(msg.sender, msg.value);
+  fallback() payable external {
+    (TokenV1_Interface(address(this))).mint(msg.sender, msg.value);
   }
 }
