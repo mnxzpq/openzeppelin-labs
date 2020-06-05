@@ -49,7 +49,7 @@ contract Registry is IRegistry {
     emit FallbackAdded(version, implementation);
   }
   
-  function funcToBytes4(string memory func) public pure  returns (bytes4){
+  function funcToBytes4(string memory func) public pure returns (bytes4){
       bytes memory s = abi.encodePacked(func);
       return bytes4(keccak256(s));
   } 
